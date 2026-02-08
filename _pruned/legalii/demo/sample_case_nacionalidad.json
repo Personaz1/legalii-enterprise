@@ -1,0 +1,43 @@
+{
+  "case_id": "CASE-ES-0003",
+  "case_type": "nacionalidad_residencia",
+  "applicant": {
+    "full_name": "Sergey Volkov",
+    "birth_date": "1988-11-03",
+    "passport_number": "CC1122334"
+  },
+  "documents": [
+    {
+      "doc_type": "pasaporte",
+      "fields": {
+        "full_name": "Sergey Volkov",
+        "birth_date": "1988-11-03",
+        "passport_number": "CC1122334"
+      }
+    },
+    {
+      "doc_type": "tarjeta_residencia",
+      "fields": {
+        "nie": "X1234567A"
+      }
+    },
+    {
+      "doc_type": "certificado_nacimiento",
+      "fields": {
+        "full_name": "Sergey Volkov"
+      }
+    },
+    {
+      "doc_type": "antecedentes_penales",
+      "fields": {
+        "issued_date": "2025-12-01"
+      }
+    },
+    {
+      "doc_type": "ccse_dele_si_aplica",
+      "fields": {
+        "ccse": "apto"
+      }
+    }
+  ]
+}

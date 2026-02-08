@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>LEGALII Enterprise</title>
+  <link rel="stylesheet" href="/ui/styles.css" />
+</head>
+<body>
+  <header class="top">
+    <div>
+      <h1>LEGALII Enterprise</h1>
+      <p>Private Legal AI for law firms — local-first by default.</p>
+    </div>
+    <span id="health" class="badge">checking…</span>
+  </header>
+
+  <main class="grid">
+    <section class="card">
+      <h2>Auth</h2>
+      <div class="row">
+        <input id="apiKey" placeholder="x-api-key / token" />
+        <button id="saveKeyBtn">Save Key</button>
+      </div>
+      <div class="row">
+        <input id="username" placeholder="username" />
+        <input id="password" type="password" placeholder="password" />
+        <button id="loginBtn">Login</button>
+      </div>
+      <p class="muted">Password login returns a session token and stores it as x-api-key.</p>
+    </section>
+    <section class="card">
+      <h2>Case Analyzer</h2>
+      <p>Upload JSON/PDF/DOCX/TXT/MD/CSV/LOG (and images with OCR stack) or run built-in fixtures to validate completeness and risk flags.</p>
+
+      <div class="row">
+        <input id="file" type="file" multiple />
+        <button id="uploadBtn">Analyze Upload</button>
+        <button id="batchBtn">Analyze Batch</button>
+      </div>
+
+      <div class="row">
+        <button data-sample="extranjeria">Sample: Asilo</button>
+        <button data-sample="arraigo">Sample: Arraigo</button>
+        <button data-sample="nacionalidad">Sample: Nacionalidad</button>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>Deployment profile</h2>
+      <ul>
+        <li><b>Local:</b> single-machine, no cloud required</li>
+        <li><b>Server:</b> VPS/on-prem via docker compose</li>
+        <li><b>Security:</b> API key + audit log support</li>
+      </ul>
+      <p class="muted">Data boundary mode: on by default.</p>
+    </section>
+
+    <section class="card">
+      <h2>Review Queue</h2>
+      <div class="row">
+        <button id="loadQueueBtn">Load Pending</button>
+      </div>
+      <div class="row">
+        <input id="reviewId" placeholder="review id" />
+        <select id="reviewDecision">
+          <option value="approved">approved</option>
+          <option value="rejected">rejected</option>
+        </select>
+        <input id="reviewNote" placeholder="note" />
+        <button id="resolveReviewBtn">Resolve</button>
+      </div>
+      <pre id="queueOut">No pending reviews loaded.</pre>
+    </section>
+
+    <section class="card full">
+      <h2>Result</h2>
+      <pre id="out">Run an analysis to see structured output…</pre>
+    </section>
+  </main>
+
+  <script src="/ui/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,5 @@
+Nombre: Ivan Petrov
+Fecha de nacimiento: 1992-09-15
+Pasaporte: AA1234567
+Solicitud de asilo presentada.
+Adjunto empadronamiento y pruebas de persecución.

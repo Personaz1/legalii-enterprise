@@ -1,0 +1,32 @@
+{
+  "case_id": "CASE-ES-0002",
+  "case_type": "arraigo_social",
+  "applicant": {
+    "full_name": "Maria Ivanova",
+    "birth_date": "1990-04-21",
+    "passport_number": "BB7654321"
+  },
+  "documents": [
+    {
+      "doc_type": "pasaporte_completo",
+      "fields": {
+        "full_name": "Maria Ivanova",
+        "birth_date": "1990-04-21",
+        "passport_number": "BB7654321"
+      }
+    },
+    {
+      "doc_type": "empadronamiento_historico",
+      "fields": {
+        "address": "Barcelona",
+        "from_date": "2021-01-05"
+      }
+    },
+    {
+      "doc_type": "contrato_trabajo_o_medios",
+      "fields": {
+        "contract_type": "indefinido"
+      }
+    }
+  ]
+}

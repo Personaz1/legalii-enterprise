@@ -1,0 +1,50 @@
+{
+  "version": "v1",
+  "jurisdiction": "ES",
+  "case_types": {
+    "asilo": {
+      "required": [
+        "pasaporte_o_id",
+        "solicitud_asilo",
+        "empadronamiento_o_domicilio",
+        "pruebas_relato"
+      ],
+      "optional": [
+        "denuncias",
+        "informes_medicos",
+        "pruebas_periodisticas"
+      ]
+    },
+    "arraigo_social": {
+      "required": [
+        "pasaporte_completo",
+        "empadronamiento_historico",
+        "antecedentes_penales_origen",
+        "contrato_trabajo_o_medios"
+      ],
+      "optional": [
+        "informe_integracion",
+        "vinculos_familiares"
+      ]
+    },
+    "nacionalidad_residencia": {
+      "required": [
+        "pasaporte",
+        "tarjeta_residencia",
+        "certificado_nacimiento",
+        "antecedentes_penales",
+        "ccse_dele_si_aplica"
+      ],
+      "optional": [
+        "certificados_empadronamiento",
+        "vida_laboral"
+      ]
+    }
+  },
+  "conflict_checks": [
+    "name_mismatch",
+    "birthdate_mismatch",
+    "passport_number_mismatch",
+    "timeline_inconsistency"
+  ]
+}

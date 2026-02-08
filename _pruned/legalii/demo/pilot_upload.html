@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>LEGALII Pilot Upload</title>
+  <style>
+    body{font-family:Inter,Arial,sans-serif;max-width:900px;margin:24px auto;padding:0 16px}
+    .card{border:1px solid #ddd;border-radius:10px;padding:16px;margin:12px 0}
+    button{padding:10px 14px;border:0;border-radius:8px;background:#111;color:#fff;cursor:pointer}
+    .muted{color:#666}
+    .score{font-size:28px;font-weight:700}
+  </style>
+</head>
+<body>
+  <h1>LEGALII Pilot Demo</h1>
+  <p class="muted">Upload a JSON case file and get readiness, missing docs, and risk flags.</p>
+
+  <div class="card">
+    <input id="file" type="file" accept=".json" />
+    <button id="run">Analyze case</button>
+  </div>
+
+  <div class="card">
+    <button onclick="loadSample('extranjeria')">Load sample: asilo</button>
+    <button onclick="loadSample('arraigo')">Load sample: arraigo</button>
+    <button onclick="loadSample('nacionalidad')">Load sample: nacionalidad</button>
+  </div>
+
+  <div id="out" class="card" style="display:none"></div>
+
+<script>
+const API='/api/v1/pilot';
+
+function render(r){
+  const out=document.getElementById('out');
+  out.style.display='block';
+  out.innerHTML=`
+    <div class="score">Readiness: ${r.readiness_score}/100</div>
+    <p><b>Case:</b> ${r.case_id} (${r.case_type})</p>
+    <h3>Missing docs</h3>
+    <ul>${(r.missing_docs||[]).map(x=>`<li>❌ ${x}</li>`).join('') || '<li>✅ None</li>'}</ul>
+    <h3>Risk flags</h3>
+    <ul>${(r.risk_flags||[]).map(x=>`<li>⚠️ ${x}</li>`).join('') || '<li>✅ None</li>'}</ul>
+    <h3>Next steps</h3>
+    <ul>${(r.next_steps||[]).map(x=>`<li>${x}</li>`).join('')}</ul>
+  `;
+}
+
+document.getElementById('run').onclick=async()=>{
+  const f=document.getElementById('file').files[0];
+  if(!f){ alert('Select .json file first'); return; }
+  const fd=new FormData(); fd.append('file', f);
+  const res=await fetch(`${API}/analyze-upload`, { method:'POST', body:fd });
+  if(!res.ok){ alert('API error: '+res.status); return; }
+  render(await res.json());
+}
+
+async function loadSample(name){
+  const s=await fetch(`${API}/sample/${name}`);
+  const payload=await s.json();
+  const r=await fetch(`${API}/analyze`, {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({ case_data: payload })
+  });
+  render(await r.json());
+}
+</script>
+</body>
+</html>
