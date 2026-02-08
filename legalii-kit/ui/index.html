@@ -10,72 +10,112 @@
   <header class="top">
     <div>
       <h1>LEGALII Enterprise</h1>
-      <p>Private Legal AI for law firms — local-first by default.</p>
+      <p>Operations Console — intake, review workflow, auth and system health.</p>
     </div>
-    <span id="health" class="badge">checking…</span>
+    <div class="top-right">
+      <span id="health" class="badge">checking…</span>
+      <button id="refreshAllBtn" class="ghost">Refresh</button>
+    </div>
   </header>
 
-  <main class="grid">
-    <section class="card">
-      <h2>Auth</h2>
-      <div class="row">
-        <input id="apiKey" placeholder="x-api-key / token" />
-        <button id="saveKeyBtn">Save Key</button>
-      </div>
-      <div class="row">
-        <input id="username" placeholder="username" />
-        <input id="password" type="password" placeholder="password" />
-        <button id="loginBtn">Login</button>
-      </div>
-      <p class="muted">Password login returns a session token and stores it as x-api-key.</p>
-    </section>
-    <section class="card">
-      <h2>Case Analyzer</h2>
-      <p>Upload JSON/PDF/DOCX/TXT/MD/CSV/LOG (and images with OCR stack) or run built-in fixtures to validate completeness and risk flags.</p>
+  <nav class="tabs">
+    <button class="tab active" data-tab="dashboard">Dashboard</button>
+    <button class="tab" data-tab="review">Review Queue</button>
+    <button class="tab" data-tab="admin">Admin</button>
+  </nav>
 
-      <div class="row">
-        <input id="file" type="file" multiple />
-        <button id="uploadBtn">Analyze Upload</button>
-        <button id="batchBtn">Analyze Batch</button>
-      </div>
+  <main>
+    <section class="pane active" data-pane="dashboard">
+      <div class="grid">
+        <section class="card">
+          <h2>Authentication</h2>
+          <div class="row">
+            <input id="apiKey" placeholder="x-api-key / token" />
+            <button id="saveKeyBtn">Save Key</button>
+            <button id="whoamiBtn" class="ghost">Who am I</button>
+          </div>
+          <div class="row">
+            <input id="username" placeholder="username" />
+            <input id="password" type="password" placeholder="password" />
+            <button id="loginBtn">Login</button>
+          </div>
+        </section>
 
-      <div class="row">
-        <button data-sample="extranjeria">Sample: Asilo</button>
-        <button data-sample="arraigo">Sample: Arraigo</button>
-        <button data-sample="nacionalidad">Sample: Nacionalidad</button>
-      </div>
-    </section>
+        <section class="card">
+          <h2>Case Intake</h2>
+          <div class="row">
+            <input id="file" type="file" multiple />
+          </div>
+          <div class="row">
+            <button id="uploadBtn">Analyze Upload</button>
+            <button id="batchBtn">Analyze Batch</button>
+          </div>
+          <div class="row">
+            <button data-sample="extranjeria">Sample: Asilo</button>
+            <button data-sample="arraigo">Sample: Arraigo</button>
+            <button data-sample="nacionalidad">Sample: Nacionalidad</button>
+          </div>
+        </section>
 
-    <section class="card">
-      <h2>Deployment profile</h2>
-      <ul>
-        <li><b>Local:</b> single-machine, no cloud required</li>
-        <li><b>Server:</b> VPS/on-prem via docker compose</li>
-        <li><b>Security:</b> API key + audit log support</li>
-      </ul>
-      <p class="muted">Data boundary mode: on by default.</p>
-    </section>
-
-    <section class="card">
-      <h2>Review Queue</h2>
-      <div class="row">
-        <button id="loadQueueBtn">Load Pending</button>
+        <section class="card full">
+          <h2>Result</h2>
+          <pre id="out">Run analysis to see structured output…</pre>
+        </section>
       </div>
-      <div class="row">
-        <input id="reviewId" placeholder="review id" />
-        <select id="reviewDecision">
-          <option value="approved">approved</option>
-          <option value="rejected">rejected</option>
-        </select>
-        <input id="reviewNote" placeholder="note" />
-        <button id="resolveReviewBtn">Resolve</button>
-      </div>
-      <pre id="queueOut">No pending reviews loaded.</pre>
     </section>
 
-    <section class="card full">
-      <h2>Result</h2>
-      <pre id="out">Run an analysis to see structured output…</pre>
+    <section class="pane" data-pane="review">
+      <div class="grid">
+        <section class="card full">
+          <h2>Pending Reviews</h2>
+          <div class="row">
+            <button id="loadQueueBtn">Load Pending</button>
+          </div>
+          <div id="reviewTableWrap" class="table-wrap"></div>
+        </section>
+
+        <section class="card full">
+          <h2>Resolve Review</h2>
+          <div class="row">
+            <input id="reviewId" placeholder="review id" />
+            <select id="reviewDecision">
+              <option value="approved">approved</option>
+              <option value="rejected">rejected</option>
+            </select>
+            <input id="reviewNote" placeholder="note" />
+            <button id="resolveReviewBtn">Resolve</button>
+          </div>
+        </section>
+      </div>
+    </section>
+
+    <section class="pane" data-pane="admin">
+      <div class="grid">
+        <section class="card">
+          <h2>System Config</h2>
+          <div class="row"><button id="loadConfigBtn">Load Config</button></div>
+          <pre id="configOut">Config not loaded.</pre>
+        </section>
+        <section class="card">
+          <h2>User Management (Admin)</h2>
+          <div class="row"><button id="listUsersBtn">List Users</button></div>
+          <div class="row">
+            <input id="newUsername" placeholder="username" />
+            <input id="newPassword" placeholder="password (min 8)" type="password" />
+            <select id="newRole">
+              <option value="assistant">assistant</option>
+              <option value="lawyer">lawyer</option>
+              <option value="admin">admin</option>
+            </select>
+            <select id="newEnabled">
+              <option value="true">enabled</option>
+              <option value="false">disabled</option>
+            </select>
+            <button id="upsertUserBtn">Create / Update</button>
+          </div>
+          <pre id="usersOut">Users not loaded.</pre>
+        </section>
+      </div>
     </section>
   </main>
 

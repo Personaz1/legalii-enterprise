@@ -1,13 +1,25 @@
-body{font-family:Inter,Arial,sans-serif;background:#0b0d12;color:#e8ebf2;margin:0;padding:24px}
-.top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px}
+body{font-family:Inter,Arial,sans-serif;background:#0b0d12;color:#e8ebf2;margin:0;padding:20px}
+.top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px}
+.top-right{display:flex;gap:8px;align-items:center}
 h1{margin:0;font-size:28px}
+h2{margin:0 0 10px 0}
 p{margin:6px 0 0;color:#aab3c5}
+.tabs{display:flex;gap:8px;margin-bottom:12px}
+.tab{background:#1a2235;color:#b9c4dc;border:1px solid #2a3347;border-radius:8px;padding:8px 12px;cursor:pointer}
+.tab.active{background:#2b4bb8;color:#fff;border-color:#4f73e9}
+.pane{display:none}.pane.active{display:block}
 .grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
 .card{background:#141925;border:1px solid #2a3347;border-radius:12px;padding:14px}
-.card.full{grid-column:1 / -1}
+.card.full{grid-column:1/-1}
 .row{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
 button{background:#3e63dd;color:#fff;border:0;border-radius:8px;padding:8px 12px;cursor:pointer}
-input{background:#0b0d12;color:#dfe5f3;border:1px solid #2a3347;border-radius:8px;padding:8px}
-pre{background:#0b0d12;border:1px solid #2a3347;border-radius:8px;padding:10px;min-height:200px;white-space:pre-wrap}
+button.ghost{background:#1a2235;border:1px solid #2a3347;color:#c8d3ea}
+input,select{background:#0b0d12;color:#dfe5f3;border:1px solid #2a3347;border-radius:8px;padding:8px}
+pre{background:#0b0d12;border:1px solid #2a3347;border-radius:8px;padding:10px;min-height:180px;white-space:pre-wrap;overflow:auto}
 .badge{background:#1f7a42;color:#d8ffe7;border:1px solid #2ea35b;padding:5px 8px;border-radius:999px;font-size:12px}
-.muted{color:#93a0ba}
+.table-wrap{overflow:auto;border:1px solid #2a3347;border-radius:8px}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th,td{border-bottom:1px solid #232b3d;padding:8px;text-align:left;vertical-align:top}
+th{background:#161f31;color:#a9b6d3}
+tr:hover td{background:#101723}
+@media(max-width:1000px){.grid{grid-template-columns:1fr}}
