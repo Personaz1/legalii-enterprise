@@ -29,6 +29,7 @@ STRICT_MODE = os.getenv("LEGALII_STRICT_MODE", "true").lower() == "true"
 API_KEYS_JSON = os.getenv("LEGALII_API_KEYS_JSON", "").strip()
 REVIEW_LOG = Path(os.getenv("LEGALII_REVIEW_LOG", str(ROOT.parent / "enterprise" / "logs" / "review.log")))
 REVIEW_QUEUE = Path(os.getenv("LEGALII_REVIEW_QUEUE", str(ROOT.parent / "enterprise" / "data" / "review_queue.jsonl")))
+CASES_DIR = Path(os.getenv("LEGALII_CASES_DIR", str(ROOT.parent / "enterprise" / "data" / "cases")))
 USER_STORE = Path(os.getenv("LEGALII_USER_STORE", str(ROOT.parent / "enterprise" / "data" / "users.json")))
 TOKEN_SECRET = os.getenv("LEGALII_TOKEN_SECRET", API_KEY or "legalii-dev-secret")
 TOKEN_TTL_SECONDS = int(os.getenv("LEGALII_TOKEN_TTL_SECONDS", "28800"))
@@ -490,6 +491,38 @@ def _safe_name(name: str) -> str:
     return clean or "file"
 
 
+def _safe_case_id(case_id: str) -> str:
+    cid = re.sub(r"[^A-Za-z0-9._-]+", "-", (case_id or "").strip())
+    return cid[:80] or f"case-{int(datetime.now().timestamp())}"
+
+
+def _case_path(case_id: str) -> Path:
+    return CASES_DIR / f"{_safe_case_id(case_id)}.json"
+
+
+def _load_case(case_id: str) -> Dict[str, Any]:
+    p = _case_path(case_id)
+    if not p.exists():
+        raise HTTPException(status_code=404, detail="case not found")
+    return json.loads(p.read_text(encoding="utf-8"))
+
+
+def _save_case(case: Dict[str, Any]):
+    CASES_DIR.mkdir(parents=True, exist_ok=True)
+    p = _case_path(str(case.get("id")))
+    p.write_text(json.dumps(case, ensure_ascii=False, indent=2), encoding="utf-8")
+
+
+def _append_case_report(case_id: str, report_row: Dict[str, Any]):
+    case = _load_case(case_id)
+    reports = case.get("reports", [])
+    reports.append(report_row)
+    case["reports"] = reports[-200:]
+    case["updated_at"] = datetime.now().isoformat(timespec="seconds")
+    _save_case(case)
+    return case
+
+
 class CasePayload(BaseModel):
     case_data: Dict[str, Any]
 
@@ -883,6 +916,166 @@ class ReviewOverridePayload(BaseModel):
     reviewer_note: str
 
 
+
+
+class CaseCreatePayload(BaseModel):
+    case_id: str
+    case_type: str
+    title: str = ""
+    client_name: str = ""
+    status: str = "draft"
+    owner: str = ""
+    case_data: Dict[str, Any] = {}
+
+
+class CasePatchPayload(BaseModel):
+    title: str | None = None
+    client_name: str | None = None
+    status: str | None = None
+    owner: str | None = None
+    case_type: str | None = None
+
+
+@app.post("/api/v1/cases")
+async def cases_create(payload: CaseCreatePayload, request: Request, x_api_key: str | None = Header(default=None)):
+    identity = _resolve_identity(x_api_key)
+    _require_roles(identity, ["admin", "lawyer", "assistant"])
+    case_id = _safe_case_id(payload.case_id)
+    path = _case_path(case_id)
+    if path.exists():
+        raise HTTPException(status_code=409, detail="case already exists")
+    now = datetime.now().isoformat(timespec="seconds")
+    row = {
+        "id": case_id,
+        "case_type": payload.case_type,
+        "title": payload.title,
+        "client_name": payload.client_name,
+        "status": payload.status,
+        "owner": payload.owner or identity.get("user"),
+        "case_data": payload.case_data,
+        "reports": [],
+        "created_at": now,
+        "updated_at": now,
+    }
+    _save_case(row)
+    _audit("case_create", {"client": request.client.host if request.client else None, "case_id": case_id, "user": identity.get("user")})
+    return {"success": True, "case": row}
+
+
+@app.get("/api/v1/cases")
+async def cases_list(x_api_key: str | None = Header(default=None), q: str = "", status: str = "", limit: int = 200):
+    identity = _resolve_identity(x_api_key)
+    _require_roles(identity, ["admin", "lawyer", "assistant"])
+    CASES_DIR.mkdir(parents=True, exist_ok=True)
+    items = []
+    for p in sorted(CASES_DIR.glob("*.json"), key=lambda x: x.stat().st_mtime, reverse=True):
+        try:
+            c = json.loads(p.read_text(encoding="utf-8"))
+        except Exception:
+            continue
+        if status and str(c.get("status", "")) != status:
+            continue
+        if q:
+            text = f"{c.get('id','')} {c.get('title','')} {c.get('client_name','')}".lower()
+            if q.lower() not in text:
+                continue
+        items.append({
+            "id": c.get("id"),
+            "title": c.get("title"),
+            "client_name": c.get("client_name"),
+            "case_type": c.get("case_type"),
+            "status": c.get("status"),
+            "owner": c.get("owner"),
+            "updated_at": c.get("updated_at"),
+            "reports_count": len(c.get("reports", [])),
+        })
+        if len(items) >= max(1, min(limit, 1000)):
+            break
+    return {"count": len(items), "items": items}
+
+
+@app.get("/api/v1/cases/{case_id}")
+async def cases_get(case_id: str, x_api_key: str | None = Header(default=None)):
+    identity = _resolve_identity(x_api_key)
+    _require_roles(identity, ["admin", "lawyer", "assistant"])
+    return {"success": True, "case": _load_case(case_id)}
+
+
+@app.patch("/api/v1/cases/{case_id}")
+async def cases_patch(case_id: str, payload: CasePatchPayload, request: Request, x_api_key: str | None = Header(default=None)):
+    identity = _resolve_identity(x_api_key)
+    _require_roles(identity, ["admin", "lawyer", "assistant"])
+    case = _load_case(case_id)
+    for k in ["title", "client_name", "status", "owner", "case_type"]:
+        v = getattr(payload, k)
+        if v is not None:
+            case[k] = v
+    case["updated_at"] = datetime.now().isoformat(timespec="seconds")
+    _save_case(case)
+    _audit("case_patch", {"client": request.client.host if request.client else None, "case_id": case.get("id"), "user": identity.get("user")})
+    return {"success": True, "case": case}
+
+
+@app.post("/api/v1/cases/{case_id}/analyze-upload")
+async def case_analyze_upload(case_id: str, request: Request, file: UploadFile = File(...), x_api_key: str | None = Header(default=None)):
+    identity = _resolve_identity(x_api_key)
+    _require_roles(identity, ["admin", "lawyer", "assistant"])
+    case = _load_case(case_id)
+    content = await file.read()
+    name = file.filename or "uploaded"
+    rules = _load_json(RULES_PATH)
+
+    if name.lower().endswith(".json"):
+        try:
+            case_data = json.loads(content.decode("utf-8"))
+        except Exception as e:
+            raise HTTPException(status_code=400, detail=f"Invalid JSON: {e}")
+    else:
+        text = _extract_text_from_upload(name, content)
+        if not text.strip():
+            raise HTTPException(status_code=400, detail="No text extracted from document")
+        case_data = _infer_case_from_text(text, name, rules)
+
+    report = _build_report(case_data, rules)
+    review = _quality_gate(case_data, report)
+    report_row = {
+        "id": hashlib.sha256(f"{case_id}:{datetime.now().isoformat()}:{name}".encode("utf-8")).hexdigest()[:16],
+        "ts": datetime.now().isoformat(timespec="seconds"),
+        "filename": name,
+        "report": report,
+        "review": review,
+    }
+    case = _append_case_report(case_id, report_row)
+
+    queue_item = None
+    if review.get("blocking"):
+        queue_item = _enqueue_review({
+            "source": "case_analyze_upload",
+            "case_ref": case_id,
+            "filename": name,
+            "case_id": report.get("case_id"),
+            "case_type": report.get("case_type"),
+            "review": review,
+            "summary": {
+                "score": report.get("readiness_score"),
+                "missing": len(report.get("missing_docs", [])),
+                "risks": len(report.get("risk_flags", [])),
+            },
+        })
+
+    _audit("case_analyze_upload", {"client": request.client.host if request.client else None, "case_ref": case_id, "filename": name, "user": identity.get("user"), "review_status": review.get("status")})
+    return {"success": True, "case_id": case_id, "report_entry": report_row, "review_queue": queue_item, "case_reports_count": len(case.get("reports", []))}
+
+
+@app.get("/api/v1/cases/{case_id}/reports")
+async def case_reports(case_id: str, x_api_key: str | None = Header(default=None), limit: int = 50):
+    identity = _resolve_identity(x_api_key)
+    _require_roles(identity, ["admin", "lawyer", "assistant"])
+    case = _load_case(case_id)
+    reports = case.get("reports", [])
+    n = max(1, min(limit, 500))
+    return {"count": len(reports), "items": reports[-n:]}
+
 class LoginPayload(BaseModel):
     username: str
     password: str
@@ -992,6 +1185,7 @@ async def system_config(x_api_key: str | None = Header(default=None)):
         "audit_log": str(AUDIT_LOG),
         "review_log": str(REVIEW_LOG),
         "user_store": str(USER_STORE),
+        "cases_dir": str(CASES_DIR),
     }
 
 

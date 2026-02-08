@@ -57,6 +57,21 @@
           </div>
         </section>
 
+
+        <section class="card full">
+          <h2>Case Registry</h2>
+          <div class="row">
+            <input id="caseId" placeholder="case id" />
+            <input id="caseTitle" placeholder="title" />
+            <input id="caseClient" placeholder="client name" />
+            <select id="caseType"><option value="asilo">asilo</option><option value="arraigo_social">arraigo_social</option><option value="nacionalidad_residencia">nacionalidad_residencia</option></select>
+            <button id="createCaseBtn">Create Case</button>
+            <button id="caseAnalyzeBtn">Analyze into Case</button>
+            <button id="loadCasesBtn" class="ghost">Load Cases</button>
+          </div>
+          <div id="casesTableWrap" class="table-wrap"></div>
+        </section>
+
         <section class="card full">
           <h2>Result</h2>
           <pre id="out">Run analysis to see structured output…</pre>

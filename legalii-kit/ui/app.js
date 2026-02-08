@@ -141,10 +141,52 @@ function bindActions(){
 
   document.getElementById('refreshAllBtn').onclick = async () => {
     await checkHealth();
+loadCases().catch(()=>{});
     try { await loadQueue(); } catch {}
+    try { await loadCases(); } catch {}
+  };
+
+  document.getElementById('createCaseBtn').onclick = async () => {
+    const payload = {
+      case_id: document.getElementById('caseId').value.trim(),
+      title: document.getElementById('caseTitle').value.trim(),
+      client_name: document.getElementById('caseClient').value.trim(),
+      case_type: document.getElementById('caseType').value,
+      status: 'draft',
+      owner: '',
+      case_data: {},
+    };
+    if (!payload.case_id) return alert('case id required');
+    show(await j('/api/v1/cases', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload)}));
+    await loadCases();
+  };
+
+  document.getElementById('loadCasesBtn').onclick = loadCases;
+
+  document.getElementById('caseAnalyzeBtn').onclick = async () => {
+    const caseId = document.getElementById('caseId').value.trim();
+    if (!caseId) return alert('case id required');
+    const f = document.getElementById('file').files[0];
+    if (!f) return alert('select file first');
+    const fd = new FormData(); fd.append('file', f);
+    show(await j(`/api/v1/cases/${encodeURIComponent(caseId)}/analyze-upload`, {method:'POST', body: fd}));
+    await loadCases();
   };
 }
 
 setTabs();
 bindActions();
 checkHealth();
+loadCases().catch(()=>{});
+
+async function loadCases(){
+  const r = await j('/api/v1/cases?limit=200');
+  const wrap = document.getElementById('casesTableWrap');
+  if (!wrap) return;
+  const items = r.items || [];
+  if (!items.length){ wrap.innerHTML = '<div style="padding:12px">No cases.</div>'; return; }
+  wrap.innerHTML = `<table><thead><tr><th>ID</th><th>Client</th><th>Title</th><th>Type</th><th>Status</th><th>Reports</th></tr></thead><tbody>${items.map(c=>`<tr data-case-id="${c.id}"><td>${c.id||''}</td><td>${c.client_name||''}</td><td>${c.title||''}</td><td>${c.case_type||''}</td><td>${c.status||''}</td><td>${c.reports_count||0}</td></tr>`).join('')}</tbody></table>`;
+  wrap.querySelectorAll('tr[data-case-id]').forEach(tr=>{
+    tr.onclick=()=>{ document.getElementById('caseId').value = tr.dataset.caseId || ''; };
+  });
+}
