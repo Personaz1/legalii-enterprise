@@ -527,6 +527,45 @@ class CasePayload(BaseModel):
     case_data: Dict[str, Any]
 
 
+
+
+def _case_dossier_markdown(case: Dict[str, Any], review_items: list[Dict[str, Any]]) -> str:
+    lines = [
+        f"# LEGALII Dossier — {case.get('id')}",
+        "",
+        f"- Title: {case.get('title','')}",
+        f"- Client: {case.get('client_name','')}",
+        f"- Case type: {case.get('case_type','')}",
+        f"- Status: {case.get('status','')}",
+        f"- Owner: {case.get('owner','')}",
+        f"- Updated: {case.get('updated_at','')}",
+        "",
+        "## Reports timeline",
+    ]
+    reports = case.get('reports', [])
+    if not reports:
+        lines.append('- No reports yet')
+    else:
+        for r in reports[-50:]:
+            rep = r.get('report', {})
+            rev = r.get('review', {})
+            lines.append(f"- [{r.get('ts','')}] {r.get('filename','')} | score={rep.get('readiness_score')} | review={rev.get('status')}")
+            risks = rep.get('risk_flags', [])
+            miss = rep.get('missing_docs', [])
+            if risks:
+                lines.append(f"  - risks: {', '.join(risks[:6])}")
+            if miss:
+                lines.append(f"  - missing: {', '.join(miss[:6])}")
+
+    lines += ["", "## Review decisions"]
+    if not review_items:
+        lines.append('- No review decisions yet')
+    else:
+        for it in review_items[-100:]:
+            lines.append(f"- [{it.get('resolved_at') or it.get('ts')}] id={it.get('id')} status={it.get('status')} by={(it.get('resolved_by') or {}).get('user','')} note={it.get('resolution_note','')}")
+
+    return '\n'.join(lines) + '\n'
+
 def _report_markdown(report: Dict[str, Any]) -> str:
     lines = [
         f"# LEGALII Report — {report.get('case_id')}",
@@ -1075,6 +1114,47 @@ async def case_reports(case_id: str, x_api_key: str | None = Header(default=None
     reports = case.get("reports", [])
     n = max(1, min(limit, 500))
     return {"count": len(reports), "items": reports[-n:]}
+
+
+@app.get("/api/v1/cases/{case_id}/dossier-markdown", response_class=PlainTextResponse)
+async def case_dossier_markdown(case_id: str, x_api_key: str | None = Header(default=None)):
+    identity = _resolve_identity(x_api_key)
+    _require_roles(identity, ["admin", "lawyer", "assistant"])
+    case = _load_case(case_id)
+    review_items = [x for x in _load_review_queue() if str(x.get("case_ref", "")) == case_id and x.get("status") in ["approved", "rejected"]]
+    return _case_dossier_markdown(case, review_items)
+
+
+@app.get("/api/v1/cases/{case_id}/dossier-pdf")
+async def case_dossier_pdf(case_id: str, x_api_key: str | None = Header(default=None)):
+    identity = _resolve_identity(x_api_key)
+    _require_roles(identity, ["admin", "lawyer", "assistant"])
+    case = _load_case(case_id)
+    review_items = [x for x in _load_review_queue() if str(x.get("case_ref", "")) == case_id and x.get("status") in ["approved", "rejected"]]
+    md = _case_dossier_markdown(case, review_items)
+
+    try:
+        from reportlab.lib.pagesizes import A4  # type: ignore
+        from reportlab.pdfgen import canvas  # type: ignore
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"PDF export dependency missing (reportlab): {e}")
+
+    packet = io.BytesIO()
+    c = canvas.Canvas(packet, pagesize=A4)
+    w, h = A4
+    y = h - 40
+    c.setFont("Helvetica", 10)
+    for line in md.splitlines():
+        c.drawString(40, y, line[:120])
+        y -= 14
+        if y < 40:
+            c.showPage()
+            c.setFont("Helvetica", 10)
+            y = h - 40
+    c.showPage()
+    c.save()
+    data = packet.getvalue()
+    return Response(content=data, media_type="application/pdf", headers={"Content-Disposition": f"attachment; filename=legalii_dossier_{case_id}.pdf"})
 
 class LoginPayload(BaseModel):
     username: str

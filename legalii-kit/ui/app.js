@@ -43,11 +43,33 @@ function renderReviewTable(items){
   if (!items.length) { wrap.innerHTML = '<div style="padding:12px">No pending items.</div>'; return; }
   wrap.innerHTML = `<table><thead><tr><th>ID</th><th>Case</th><th>Status</th><th>Issues</th><th>Action</th></tr></thead><tbody>${items.map(it => {
     const issues = ((it.review||{}).issues||[]).slice(0,3).join(', ');
-    return `<tr><td>${it.id||''}</td><td>${(it.report||{}).case_id||''}</td><td>${it.status||''}</td><td>${issues}</td><td><button data-fill-id="${it.id||''}">Use</button></td></tr>`;
+    return `<tr><td>${it.id||''}</td><td>${(it.case_ref||((it.report||{}).case_id)||'')}</td><td>${it.status||''}</td><td>${issues}</td><td><button data-fill-id="${it.id||''}">Use</button></td></tr>`;
   }).join('')}</tbody></table>`;
   wrap.querySelectorAll('button[data-fill-id]').forEach(btn => {
     btn.onclick = () => { document.getElementById('reviewId').value = btn.dataset.fillId || ''; };
   });
+}
+
+async function loadCases(){
+  const q = encodeURIComponent((document.getElementById('casesQuery')?.value || '').trim());
+  const status = encodeURIComponent((document.getElementById('casesStatus')?.value || '').trim());
+  const r = await j(`/api/v1/cases?limit=200&q=${q}&status=${status}`);
+  const wrap = document.getElementById('casesTableWrap');
+  if (!wrap) return;
+  const items = r.items || [];
+  if (!items.length){ wrap.innerHTML = '<div style="padding:12px">No cases.</div>'; return; }
+  wrap.innerHTML = `<table><thead><tr><th>ID</th><th>Client</th><th>Title</th><th>Type</th><th>Status</th><th>Reports</th></tr></thead><tbody>${items.map(c=>`<tr data-case-id="${c.id}"><td>${c.id||''}</td><td>${c.client_name||''}</td><td>${c.title||''}</td><td>${c.case_type||''}</td><td>${c.status||''}</td><td>${c.reports_count||0}</td></tr>`).join('')}</tbody></table>`;
+  wrap.querySelectorAll('tr[data-case-id]').forEach(tr=>{
+    tr.onclick=()=>{ document.getElementById('caseId').value = tr.dataset.caseId || ''; };
+  });
+}
+
+async function loadCaseDetail(){
+  const caseId = (document.getElementById('caseId')?.value || '').trim();
+  if (!caseId) return alert('case id required');
+  const c = await j(`/api/v1/cases/${encodeURIComponent(caseId)}`);
+  const r = await j(`/api/v1/cases/${encodeURIComponent(caseId)}/reports?limit=100`);
+  document.getElementById('caseDetailOut').textContent = JSON.stringify({case: c.case, reports: r.items}, null, 2);
 }
 
 function bindActions(){
@@ -105,7 +127,6 @@ function bindActions(){
   }
 
   document.getElementById('loadQueueBtn').onclick = loadQueue;
-
   document.getElementById('resolveReviewBtn').onclick = async () => {
     const id = document.getElementById('reviewId').value.trim();
     const decision = document.getElementById('reviewDecision').value;
@@ -139,13 +160,6 @@ function bindActions(){
     document.getElementById('usersOut').textContent = JSON.stringify(await j('/api/v1/auth/users'), null, 2);
   };
 
-  document.getElementById('refreshAllBtn').onclick = async () => {
-    await checkHealth();
-loadCases().catch(()=>{});
-    try { await loadQueue(); } catch {}
-    try { await loadCases(); } catch {}
-  };
-
   document.getElementById('createCaseBtn').onclick = async () => {
     const payload = {
       case_id: document.getElementById('caseId').value.trim(),
@@ -162,6 +176,7 @@ loadCases().catch(()=>{});
   };
 
   document.getElementById('loadCasesBtn').onclick = loadCases;
+  document.getElementById('loadCaseDetailBtn').onclick = loadCaseDetail;
 
   document.getElementById('caseAnalyzeBtn').onclick = async () => {
     const caseId = document.getElementById('caseId').value.trim();
@@ -171,6 +186,29 @@ loadCases().catch(()=>{});
     const fd = new FormData(); fd.append('file', f);
     show(await j(`/api/v1/cases/${encodeURIComponent(caseId)}/analyze-upload`, {method:'POST', body: fd}));
     await loadCases();
+    await loadCaseDetail();
+  };
+
+  document.getElementById('exportDossierMdBtn').onclick = async () => {
+    const caseId = document.getElementById('caseId').value.trim();
+    if (!caseId) return alert('case id required');
+    const txt = await fetch(`/api/v1/cases/${encodeURIComponent(caseId)}/dossier-markdown`, {headers: authHeaders()}).then(r=>r.text());
+    document.getElementById('caseDetailOut').textContent = txt;
+  };
+
+  document.getElementById('exportDossierPdfBtn').onclick = async () => {
+    const caseId = document.getElementById('caseId').value.trim();
+    if (!caseId) return alert('case id required');
+    const resp = await fetch(`/api/v1/cases/${encodeURIComponent(caseId)}/dossier-pdf`, {headers: authHeaders()});
+    if (!resp.ok) return alert(`${resp.status} ${await resp.text()}`);
+    const blob = await resp.blob();
+    window.open(URL.createObjectURL(blob), '_blank');
+  };
+
+  document.getElementById('refreshAllBtn').onclick = async () => {
+    await checkHealth();
+    try { await loadQueue(); } catch {}
+    try { await loadCases(); } catch {}
   };
 }
 
@@ -178,15 +216,3 @@ setTabs();
 bindActions();
 checkHealth();
 loadCases().catch(()=>{});
-
-async function loadCases(){
-  const r = await j('/api/v1/cases?limit=200');
-  const wrap = document.getElementById('casesTableWrap');
-  if (!wrap) return;
-  const items = r.items || [];
-  if (!items.length){ wrap.innerHTML = '<div style="padding:12px">No cases.</div>'; return; }
-  wrap.innerHTML = `<table><thead><tr><th>ID</th><th>Client</th><th>Title</th><th>Type</th><th>Status</th><th>Reports</th></tr></thead><tbody>${items.map(c=>`<tr data-case-id="${c.id}"><td>${c.id||''}</td><td>${c.client_name||''}</td><td>${c.title||''}</td><td>${c.case_type||''}</td><td>${c.status||''}</td><td>${c.reports_count||0}</td></tr>`).join('')}</tbody></table>`;
-  wrap.querySelectorAll('tr[data-case-id]').forEach(tr=>{
-    tr.onclick=()=>{ document.getElementById('caseId').value = tr.dataset.caseId || ''; };
-  });
-}
