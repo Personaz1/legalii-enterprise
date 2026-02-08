@@ -1045,10 +1045,25 @@ async def cases_patch(case_id: str, payload: CasePatchPayload, request: Request,
     identity = _resolve_identity(x_api_key)
     _require_roles(identity, ["admin", "lawyer", "assistant"])
     case = _load_case(case_id)
-    for k in ["title", "client_name", "status", "owner", "case_type"]:
+    allowed_flow = {
+        "draft": ["in_review", "closed"],
+        "in_review": ["ready", "closed", "draft"],
+        "ready": ["closed", "in_review"],
+        "closed": ["closed"],
+    }
+    for k in ["title", "client_name", "owner", "case_type"]:
         v = getattr(payload, k)
         if v is not None:
             case[k] = v
+
+    if payload.status is not None:
+        cur = str(case.get("status", "draft"))
+        nxt = str(payload.status)
+        if nxt not in ["draft", "in_review", "ready", "closed"]:
+            raise HTTPException(status_code=400, detail="invalid status")
+        if nxt != cur and nxt not in allowed_flow.get(cur, []):
+            raise HTTPException(status_code=400, detail=f"invalid status transition: {cur} -> {nxt}")
+        case["status"] = nxt
     case["updated_at"] = datetime.now().isoformat(timespec="seconds")
     _save_case(case)
     _audit("case_patch", {"client": request.client.host if request.client else None, "case_id": case.get("id"), "user": identity.get("user")})
@@ -1310,6 +1325,22 @@ async def review_resolve(
         raise HTTPException(status_code=404, detail="pending review item not found")
 
     _save_review_queue(items)
+
+    # If review item references a case, auto-update case status
+    selected = next((x for x in items if x.get("id") == payload.id), None)
+    cref = str((selected or {}).get("case_ref", "")).strip()
+    if cref:
+        try:
+            case = _load_case(cref)
+            if payload.decision == "approved":
+                case["status"] = "ready"
+            elif payload.decision == "rejected":
+                case["status"] = "in_review"
+            case["updated_at"] = datetime.now().isoformat(timespec="seconds")
+            _save_case(case)
+        except Exception:
+            pass
+
     REVIEW_LOG.parent.mkdir(parents=True, exist_ok=True)
     with open(REVIEW_LOG, "a", encoding="utf-8") as f:
         f.write(json.dumps({

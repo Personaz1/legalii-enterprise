@@ -69,6 +69,10 @@ async function loadCaseDetail(){
   if (!caseId) return alert('case id required');
   const c = await j(`/api/v1/cases/${encodeURIComponent(caseId)}`);
   const r = await j(`/api/v1/cases/${encodeURIComponent(caseId)}/reports?limit=100`);
+  document.getElementById('caseTitle').value = c.case?.title || '';
+  document.getElementById('caseClient').value = c.case?.client_name || '';
+  if (c.case?.case_type) document.getElementById('caseType').value = c.case.case_type;
+  if (c.case?.status) document.getElementById('caseStatus').value = c.case.status;
   document.getElementById('caseDetailOut').textContent = JSON.stringify({case: c.case, reports: r.items}, null, 2);
 }
 
@@ -166,7 +170,7 @@ function bindActions(){
       title: document.getElementById('caseTitle').value.trim(),
       client_name: document.getElementById('caseClient').value.trim(),
       case_type: document.getElementById('caseType').value,
-      status: 'draft',
+      status: document.getElementById('caseStatus').value,
       owner: '',
       case_data: {},
     };
@@ -177,6 +181,19 @@ function bindActions(){
 
   document.getElementById('loadCasesBtn').onclick = loadCases;
   document.getElementById('loadCaseDetailBtn').onclick = loadCaseDetail;
+  document.getElementById('updateCaseBtn').onclick = async () => {
+    const caseId = document.getElementById('caseId').value.trim();
+    if (!caseId) return alert('case id required');
+    const payload = {
+      title: document.getElementById('caseTitle').value.trim(),
+      client_name: document.getElementById('caseClient').value.trim(),
+      status: document.getElementById('caseStatus').value,
+      case_type: document.getElementById('caseType').value,
+    };
+    show(await j(`/api/v1/cases/${encodeURIComponent(caseId)}`, {method:'PATCH', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload)}));
+    await loadCases();
+    await loadCaseDetail();
+  };
 
   document.getElementById('caseAnalyzeBtn').onclick = async () => {
     const caseId = document.getElementById('caseId').value.trim();
