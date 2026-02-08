@@ -59,3 +59,11 @@ python3 -m pip install --user pillow pytesseract pypdf python-docx
 - Login endpoint: `POST /api/v1/auth/login`
 - Admin users management: `GET/POST /api/v1/auth/users`
 - Login returns signed token (`legtk_...`) to pass in `x-api-key` header.
+
+
+## Operations
+```bash
+./scripts/legalii-backup.sh
+./scripts/legalii-retention.sh
+./scripts/legalii-smoke.sh
+```

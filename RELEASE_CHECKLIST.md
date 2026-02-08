@@ -22,8 +22,9 @@
 - [ ] Review flow works (`review-queue` + `review-resolve`)
 
 ## 3) Data safety
-- [ ] Backup plan for `enterprise/data/*` defined
-- [ ] Rotation/retention policy for logs defined
+- [ ] End-to-end smoke scenario passes (`scripts/legalii-smoke.sh`)
+- [x] Backup plan for `enterprise/data/*` defined (`scripts/legalii-backup.sh`)
+- [x] Rotation/retention policy for logs defined (`scripts/legalii-retention.sh`)
 - [ ] No sensitive test data in git
 
 ## 4) Deployment edge

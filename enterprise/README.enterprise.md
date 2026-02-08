@@ -23,3 +23,9 @@ The startup script runs preflight checks for Docker, compose, env files, auth fl
 
 ## Release gate
 Before production deployment, complete `RELEASE_CHECKLIST.md` from repo root.
+
+
+## Operations
+- Backup now: `./scripts/legalii-backup.sh`
+- Apply retention: `./scripts/legalii-retention.sh`
+- End-to-end smoke: `./scripts/legalii-smoke.sh`
