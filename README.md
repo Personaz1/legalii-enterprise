@@ -1,6 +1,6 @@
 # LEGALII Enterprise
 
-LEGAlII is a local-first legal document workflow for law firms. It is designed to organize case packets, identify missing or inconsistent material and prepare structured next-step reports for professional review.
+LEGALII is a local-first legal document workflow for law firms. It is designed to organize case packets, identify missing or inconsistent material and prepare structured next-step reports for professional review.
 
 ## Core workflow
 - Ingest case documents and supporting files.
