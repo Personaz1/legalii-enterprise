@@ -1,34 +1,25 @@
 # LEGALII Enterprise
 
-Private Legal AI for law firms.
+LEGAlII is a local-first legal document workflow for law firms. It is designed to organize case packets, identify missing or inconsistent material and prepare structured next-step reports for professional review.
 
-## What it does
-- Analyze legal case packets locally
-- Detect missing documents and inconsistencies
-- Produce structured legal next-step reports
-- Keep client data under firm control
+## Core workflow
+- Ingest case documents and supporting files.
+- Extract and normalize text.
+- Identify missing documents and internal inconsistencies.
+- Produce structured summaries and review tasks.
+- Keep a human approval gate before consequential output.
 
-## Quick start
-```bash
-./scripts/legalii-kit.sh
-```
-Open: http://127.0.0.1:8777/
+## Architecture
+This repository contains the LEGALII kit, enterprise deployment profiles, review/audit workflows and supporting product documentation. The exact implementation state is recorded in HANDOFF_STATUS.md and RELEASE_CHECKLIST.md; those files are operational records and may be older than the current branch.
 
-Enterprise (Docker):
-```bash
-./scripts/legalii-enterprise-up.sh
-```
+## Safety and legal boundary
+LEGALII is a document-workflow assistant, not a lawyer and not a source of legal advice. It must not independently determine legal strategy, submit filings, contact counterparties or calculate binding deadlines without qualified human verification. Client data must remain under the firm's approved retention, access-control and processing policies.
 
-## Security
-- Auth required in enterprise mode
-- Strict review gate enabled
-- Audit + review logs enabled
-- Configurable CORS allowlist
+## Status
+Engineering prototype / pre-release. The handoff notes list unfinished items including user management, complete review UI and hardened installer/deployment defaults. Do not describe this branch as production-ready until those gates are closed and tested.
 
-## Release
-- Checklist: `RELEASE_CHECKLIST.md`
-- Handoff status: `HANDOFF_STATUS.md`
+## Development
+Review the current branch and RELEASE_CHECKLIST.md before deployment. Use synthetic case packets for tests, keep API keys and client documents out of Git, and bind local services to loopback unless explicitly secured for a trusted network.
 
-## License
-This project includes components derived from OpenClaw under the MIT License.
-See `LICENSE` and `NOTICE`.
+## License and notices
+See LICENSE and NOTICE for upstream-derived components and attribution.
