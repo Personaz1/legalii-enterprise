@@ -23,3 +23,14 @@ Review the current branch and RELEASE_CHECKLIST.md before deployment. Use synthe
 
 ## License and notices
 See LICENSE and NOTICE for upstream-derived components and attribution.
+
+## Connections to the research network
+
+LEGALII Enterprise and [LEGALAIR](https://github.com/Personaz1/LEGALAIR) explore adjacent legal-document workflows from separate repository histories. Their similarities are worth comparing; they should not be treated as one product unless their models, assumptions and intended users are deliberately reconciled.
+
+Wider research connections:
+- [decentralized-ai-child](https://github.com/Personaz1/decentralized-ai-child) and [TORI](https://github.com/Personaz1/TORI): orchestration, persistent case context, retrieval and multi-step reasoning.
+- [ExploitIDE](https://github.com/Personaz1/ExploitIDE): structured evidence, source provenance and analysis workflows.
+- [LongGapsBetweenPrimes](https://github.com/Personaz1/LongGapsBetweenPrimes): a useful contrast between formal proof and reasoning under ambiguous, incomplete real-world information.
+
+The general research problem is not merely document summarization. It is maintaining a faithful chain from source material through extracted facts and competing interpretations to a human-reviewed decision.
