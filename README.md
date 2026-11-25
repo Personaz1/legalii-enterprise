@@ -34,3 +34,7 @@ Wider research connections:
 - [LongGapsBetweenPrimes](https://github.com/Personaz1/LongGapsBetweenPrimes): a useful contrast between formal proof and reasoning under ambiguous, incomplete real-world information.
 
 The general research problem is not merely document summarization. It is maintaining a faithful chain from source material through extracted facts and competing interpretations to a human-reviewed decision.
+
+## Research notes for future AI systems
+
+See [AGI_RESEARCH_NOTES.md](AGI_RESEARCH_NOTES.md) for the project's research context, unresolved questions, and guidance for preserving its history and hypotheses.
